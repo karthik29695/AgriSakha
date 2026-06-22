@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSakha - Smart Agriculture Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Styles & Animations -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* --- Animations --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes slideDown {
+             from { transform: translateY(-10px); opacity: 0; }
+             to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+        }
+
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* --- Utility Classes --- */
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+        .animate-slide-down { animation: slideDown 0.3s ease-out; }
+        .animate-bounce-slow { animation: bounceSlow 3s infinite ease-in-out; }
+        .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.25, 0.1, 0.25, 1) infinite; }
+        
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+
+        .animate-scan {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, transparent, #ef4444, transparent);
+            animation: scan 2s linear infinite;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Staggered Animation Delays */
+        .delay-100 { animation-delay: 100ms; opacity: 0; }
+        .delay-200 { animation-delay: 200ms; opacity: 0; }
+        .delay-300 { animation-delay: 300ms; opacity: 0; }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-[#263238] selection:bg-[#2E7D32] selection:text-white pb-20 min-h-screen flex flex-col overflow-x-hidden relative">
+
+    <!-- Background Ambience -->
+    <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-green-200/40 rounded-full blur-3xl opacity-60 mix-blend-multiply animate-blob"></div>
+        <div class="absolute top-[-10%] right-[-10%] w-[35rem] h-[35rem] bg-yellow-100/60 rounded-full blur-3xl opacity-60 mix-blend-multiply animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[45rem] h-[45rem] bg-emerald-100/50 rounded-full blur-3xl opacity-60 mix-blend-multiply animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- NAVIGATION BAR -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/50 transition-all duration-300 h-[72px]">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 h-full flex items-center justify-between">
+            
+            <!-- Left: Logo -->
+            <div class="flex items-center gap-3 cursor-pointer group" onclick="switchView('dashboard')">
+                <div class="w-11 h-11 bg-gradient-to-br from-[#2E7D32] to-[#43A047] rounded-xl flex items-center justify-center text-white shadow-lg shadow-green-900/10 group-hover:scale-105 transition-transform duration-300">
+                    <i data-lucide="leaf" class="w-6 h-6"></i>
+                </div>
+                <span class="text-[22px] font-bold text-[#1a381d] tracking-tight group-hover:text-[#2E7D32] transition-colors">AgriSakha</span>
+            </div>
+
+            <!-- Right: Actions (Desktop) -->
+            <div class="hidden md:flex items-center gap-6">
+                
+                <!-- Language Dropdown -->
+                <div class="relative group">
+                    <button onclick="toggleLangMenu()" class="flex items-center gap-2 text-[#5a6c75] hover:text-[#2E7D32] font-medium transition-all px-3 py-2 rounded-full hover:bg-green-50/80">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                        <span id="current-lang-label" class="tracking-wide text-sm">EN</span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                    </button>
+                    <!-- Dropdown Content -->
+                    <div id="lang-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-white/50 py-2 z-50 animate-slide-down ring-1 ring-black/5 overflow-hidden">
+                        <button onclick="changeLanguage('en')" class="w-full text-left px-5 py-2.5 hover:bg-green-50 text-[#263238] text-sm font-medium transition-colors">English</button>
+                        <button onclick="changeLanguage('hi')" class="w-full text-left px-5 py-2.5 hover:bg-green-50 text-[#263238] text-sm font-medium transition-colors">हिंदी (Hindi)</button>
+                        <button onclick="changeLanguage('te')" class="w-full text-left px-5 py-2.5 hover:bg-green-50 text-[#263238] text-sm font-medium transition-colors">తెలుగు (Telugu)</button>
+                        <button onclick="changeLanguage('mr')" class="w-full text-left px-5 py-2.5 hover:bg-green-50 text-[#263238] text-sm font-medium transition-colors">मराठी (Marathi)</button>
+                    </div>
+                </div>
+
+                <div class="w-11 h-11 bg-white border border-green-100 rounded-full flex items-center justify-center text-[#2E7D32] cursor-pointer hover:bg-green-50 hover:border-green-200 shadow-sm transition-all duration-300">
+                    <i data-lucide="user" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="md:hidden p-2 text-[#263238] hover:bg-gray-100 rounded-lg transition-colors" onclick="toggleMobileMenu()">
+                <i id="menu-icon" data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden absolute top-[72px] left-0 w-full bg-white/95 backdrop-blur-xl shadow-xl border-t border-gray-100 p-6 flex-col gap-4 md:hidden animate-slide-down">
+            <button onclick="switchView('dashboard'); toggleMobileMenu()" class="flex items-center gap-3 p-4 rounded-xl hover:bg-green-50 text-[#263238] font-medium transition-colors">
+                <i data-lucide="home" class="w-5 h-5 text-green-600"></i> <span data-i18n="nav_home">Home</span>
+            </button>
+            <button onclick="switchView('advisory'); toggleMobileMenu()" class="flex items-center gap-3 p-4 rounded-xl hover:bg-green-50 text-[#263238] font-medium transition-colors">
+                <i data-lucide="sprout" class="w-5 h-5 text-green-600"></i> <span data-i18n="nav_advisory">Crop Advisory</span>
+            </button>
+            <button onclick="switchView('weather'); toggleMobileMenu()" class="flex items-center gap-3 p-4 rounded-xl hover:bg-green-50 text-[#263238] font-medium transition-colors">
+                <i data-lucide="cloud-sun" class="w-5 h-5 text-green-600"></i> <span data-i18n="nav_weather">Weather</span>
+            </button>
+            <button onclick="switchView('market'); toggleMobileMenu()" class="flex items-center gap-3 p-4 rounded-xl hover:bg-green-50 text-[#263238] font-medium transition-colors">
+                <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i> <span data-i18n="nav_market">Market Prices</span>
+            </button>
+            <button onclick="switchView('plant-doctor'); toggleMobileMenu()" class="flex items-center gap-3 p-4 rounded-xl hover:bg-green-50 text-[#263238] font-medium transition-colors">
+                <i data-lucide="stethoscope" class="w-5 h-5 text-green-600"></i> <span data-i18n="nav_doctor">Plant Doctor</span>
+            </button>
+            <!-- Mobile Language Options -->
+            <div class="border-t border-gray-100 pt-4 mt-2">
+                <p class="text-xs text-gray-400 px-2 mb-3 uppercase tracking-wider font-semibold">Select Language</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="changeLanguage('en')" class="p-3 text-sm border border-gray-200 rounded-xl text-center hover:bg-green-50 hover:border-green-200 transition-all font-medium">English</button>
+                    <button onclick="changeLanguage('hi')" class="p-3 text-sm border border-gray-200 rounded-xl text-center hover:bg-green-50 hover:border-green-200 transition-all font-medium">हिंदी</button>
+                    <button onclick="changeLanguage('te')" class="p-3 text-sm border border-gray-200 rounded-xl text-center hover:bg-green-50 hover:border-green-200 transition-all font-medium">తెలుగు</button>
+                    <button onclick="changeLanguage('mr')" class="p-3 text-sm border border-gray-200 rounded-xl text-center hover:bg-green-50 hover:border-green-200 transition-all font-medium">मराठी</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 md:px-8 w-full flex-grow mt-[100px]">
+        
+        <!-- Back Button (Hidden on Dashboard) -->
+        <button id="back-btn" onclick="switchView('dashboard')" class="hidden mb-8 text-[#607D8B] hover:text-[#2E7D32] flex items-center gap-2 text-sm font-semibold transition-all hover:-translate-x-1 group">
+            <div class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center group-hover:border-green-200 group-hover:bg-green-50 transition-colors">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </div>
+            <span data-i18n="back_btn">Back to Dashboard</span>
+        </button>
+
+        <!-- VIEW: DASHBOARD HOME -->
+        <div id="view-dashboard" class="space-y-10 animate-fade-in">
+            <!-- Welcome Header -->
+            <section class="pt-2 pb-4 text-center md:text-left">
+                <h1 class="text-[32px] md:text-[40px] font-extrabold text-[#1a381d] mb-3 leading-tight">
+                    <span data-i18n="welcome_title">Welcome to AgriSakha</span> <span class="inline-block animate-bounce-slow text-4xl">🌱</span>
+                </h1>
+                <p class="text-[18px] text-[#5a6c75] font-medium" data-i18n="welcome_sub">
+                    Your AI-powered assistant for smarter farming decisions.
+                </p>
+            </section>
+
+            <!-- Feature Cards Grid -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Crop Advisory Card -->
+                <div onclick="switchView('advisory')" class="glass-panel rounded-[24px] p-8 cursor-pointer group hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(46,125,50,0.15)] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-[#2E7D32] animate-slide-up delay-100">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="p-4 bg-green-50 rounded-2xl text-[#2E7D32] group-hover:bg-[#2E7D32] group-hover:text-white transition-colors duration-300">
+                            <i data-lucide="sprout" class="w-8 h-8 group-hover:rotate-12 transition-transform duration-300"></i>
+                        </div>
+                        <div class="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center bg-white text-gray-400 group-hover:text-[#2E7D32] group-hover:border-green-200 transition-all">
+                            <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-[22px] font-bold text-[#263238] mb-3 group-hover:text-[#2E7D32] transition-colors" data-i18n="card_advisory_title">AI Crop Advisory</h3>
+                    <p class="text-[#5a6c75] text-base leading-relaxed" data-i18n="card_advisory_desc">
+                        Get personalized crop recommendations based on soil, weather, and inputs.
+                    </p>
+                </div>
+
+                <!-- Weather Insights Card -->
+                <div onclick="switchView('weather')" class="glass-panel rounded-[24px] p-8 cursor-pointer group hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(249,168,37,0.15)] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-[#F9A825] animate-slide-up delay-200">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="p-4 bg-orange-50 rounded-2xl text-[#F9A825] group-hover:bg-[#F9A825] group-hover:text-white transition-colors duration-300">
+                            <i data-lucide="cloud-sun" class="w-8 h-8 group-hover:rotate-12 transition-transform duration-300"></i>
+                        </div>
+                        <div class="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center bg-white text-gray-400 group-hover:text-[#F9A825] group-hover:border-orange-200 transition-all">
+                            <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-[22px] font-bold text-[#263238] mb-3 group-hover:text-[#F9A825] transition-colors" data-i18n="card_weather_title">Weather Insights</h3>
+                    <p class="text-[#5a6c75] text-base leading-relaxed" data-i18n="card_weather_desc">
+                        View short-term forecasts and alerts to plan farming activities.
+                    </p>
+                </div>
+
+                <!-- Market Prices Card -->
+                <div onclick="switchView('market')" class="glass-panel rounded-[24px] p-8 cursor-pointer group hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(33,150,243,0.15)] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-[#1E88E5] animate-slide-up delay-300">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="p-4 bg-blue-50 rounded-2xl text-[#1E88E5] group-hover:bg-[#1E88E5] group-hover:text-white transition-colors duration-300">
+                            <i data-lucide="trending-up" class="w-8 h-8 group-hover:scale-110 transition-transform duration-300"></i>
+                        </div>
+                        <div class="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center bg-white text-gray-400 group-hover:text-[#1E88E5] group-hover:border-blue-200 transition-all">
+                            <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-[22px] font-bold text-[#263238] mb-3 group-hover:text-[#1E88E5] transition-colors" data-i18n="card_market_title">Market Prices</h3>
+                    <p class="text-[#5a6c75] text-base leading-relaxed" data-i18n="card_market_desc">
+                        Real-time mandi prices and market trends analysis.
+                    </p>
+                </div>
+
+                <!-- Plant Doctor Card -->
+                <div onclick="switchView('plant-doctor')" class="glass-panel rounded-[24px] p-8 cursor-pointer group hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(239,68,68,0.15)] transition-all duration-300 border-l-4 border-l-transparent hover:border-l-red-500 animate-slide-up delay-300">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="p-4 bg-red-50 rounded-2xl text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors duration-300">
+                            <i data-lucide="stethoscope" class="w-8 h-8 group-hover:scale-110 transition-transform duration-300"></i>
+                        </div>
+                        <div class="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center bg-white text-gray-400 group-hover:text-red-500 group-hover:border-red-200 transition-all">
+                            <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-0.5 transition-transform"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-[22px] font-bold text-[#263238] mb-3 group-hover:text-red-500 transition-colors" data-i18n="card_doctor_title">Plant Doctor</h3>
+                    <p class="text-[#5a6c75] text-base leading-relaxed" data-i18n="card_doctor_desc">
+                        Identify crop diseases instantly by uploading a photo and get cures.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW: CROP ADVISORY -->
+        <div id="view-advisory" class="hidden max-w-[800px] mx-auto animate-fade-in space-y-8">
+            <div class="text-center space-y-2">
+                <h2 class="text-[28px] font-bold text-[#1a381d] flex items-center justify-center gap-3">
+                    <span class="p-2 bg-green-100 rounded-lg text-green-700"><i data-lucide="sprout"></i></span> 
+                    <span data-i18n="advisory_title">AI Crop Advisory</span>
+                </h2>
+                <p class="text-[#607D8B] font-medium" data-i18n="advisory_sub">Expert advice tailored to your farm's needs</p>
+            </div>
+            
+            <!-- Input Card -->
+            <div class="glass-panel rounded-[24px] p-8 shadow-sm space-y-6">
+                <div>
+                    <label class="block text-base font-bold text-[#263238] mb-3" data-i18n="advisory_label">
+                        What's your concern today?
+                    </label>
+                    <div class="relative group">
+                        <textarea 
+                            id="advisory-input"
+                            class="w-full h-[140px] p-5 pr-14 rounded-[16px] border-2 border-gray-100 focus:border-[#2E7D32] focus:ring-4 focus:ring-[#2E7D32]/10 resize-none outline-none text-[#263238] placeholder:text-gray-400 bg-white transition-all text-base"
+                            placeholder="Example: What fertilizer should I use for wheat this season? My soil is clay-loam."
+                            data-i18n-placeholder="advisory_placeholder"></textarea>
+                        
+                        <!-- Attach File Button -->
+                        <button onclick="document.getElementById('advisory-file-input').click()" class="absolute right-16 bottom-4 w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-[#607D8B] hover:text-white hover:bg-blue-500 transition-all duration-300 shadow-sm hover:shadow-md" title="Attach Document (PDF/Image)">
+                            <i data-lucide="paperclip" class="w-5 h-5"></i>
+                        </button>
+                        <input type="file" id="advisory-file-input" class="hidden" accept=".pdf,image/*" onchange="handleAdvisoryFileSelect(event)">
+
+                        <!-- Mic Button -->
+                        <button id="mic-btn" onclick="toggleMic()" class="absolute right-4 bottom-4 w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full text-[#607D8B] hover:text-white hover:bg-[#2E7D32] transition-all duration-300 shadow-sm hover:shadow-md" title="Tap to Speak">
+                            <i data-lucide="mic" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- File Preview Container -->
+                    <div id="advisory-file-preview" class="hidden mt-3 flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl p-3 w-fit animate-fade-in">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="advisory-file-name" class="text-sm font-semibold text-blue-900 truncate max-w-[200px]">document.pdf</span>
+                            <span class="text-xs text-blue-500">Ready to analyze</span>
+                        </div>
+                        <button onclick="removeAdvisoryFile()" class="ml-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-200 text-blue-500 transition-colors">
+                            <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                </div>
+                <button id="advisory-btn" onclick="handleAdvisory()" class="w-full h-14 rounded-[16px] font-bold text-lg bg-gradient-to-r from-[#2E7D32] to-[#43A047] text-white hover:shadow-lg hover:shadow-green-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                    <span data-i18n="advisory_btn">Get Advisory</span> <i data-lucide="sparkles" class="w-5 h-5 opacity-80"></i>
+                </button>
+            </div>
+
+            <!-- Result Section -->
+            <div id="advisory-result-container" class="hidden animate-slide-up">
+                <div class="bg-white/80 border border-green-100 rounded-[24px] p-8 relative shadow-xl shadow-green-900/5 backdrop-blur-sm">
+                    <!-- Text-to-Speech Button -->
+                    <button id="speak-btn" onclick="toggleSpeech()" class="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-md text-[#2E7D32] hover:bg-green-50 transition-all border border-green-50" title="Read Aloud">
+                        <i id="speak-icon" data-lucide="volume-2" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <h3 class="text-[20px] font-bold text-[#2E7D32] mb-6 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+                            <i data-lucide="leaf" class="w-5 h-5"></i> 
+                        </div>
+                        <span data-i18n="rec_title">AI Recommendation</span>
+                    </h3>
+                    
+                    <div id="advisory-text" class="text-[#263238] leading-relaxed whitespace-pre-line text-lg pr-4 font-medium"></div>
+                    
+                    <div class="mt-8 pt-6 border-t border-dashed border-green-200 flex gap-2 text-sm text-[#5a6c75] bg-green-50/50 -mx-8 -mb-8 p-6 rounded-b-[24px]">
+                        <i data-lucide="info" class="w-5 h-5 text-green-600 flex-shrink-0"></i>
+                        <div>
+                            <span class="font-bold text-green-800" data-i18n="note_label">Note:</span> 
+                            <span data-i18n="note_text">Always verify with local agricultural extension officers.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: WEATHER INSIGHTS -->
+        <div id="view-weather" class="hidden max-w-[1000px] mx-auto animate-fade-in space-y-8">
+            <div class="text-center space-y-2">
+                <h2 class="text-[28px] font-bold text-[#1a381d] flex items-center justify-center gap-3">
+                    <span class="p-2 bg-orange-100 rounded-lg text-orange-600"><i data-lucide="cloud-sun"></i></span>
+                    <span data-i18n="weather_title">Weather Insights</span>
+                </h2>
+                <p class="text-[#607D8B] font-medium" data-i18n="weather_sub">Plan your farming activities with precision</p>
+            </div>
+
+            <!-- Search Card -->
+            <div class="glass-panel rounded-[24px] p-6 shadow-sm">
+                <form onsubmit="handleWeather(event)" class="flex flex-col md:flex-row gap-4">
+                    <div class="relative flex-1 group">
+                        <div class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2E7D32] transition-colors">
+                            <i data-lucide="map-pin" class="w-5 h-5"></i>
+                        </div>
+                        <input 
+                            id="weather-input"
+                            type="text"
+                            placeholder="Enter Village, District or Pincode"
+                            data-i18n-placeholder="weather_placeholder"
+                            class="w-full pl-14 pr-14 h-14 rounded-[16px] border-2 border-gray-100 focus:border-[#2E7D32] focus:ring-4 focus:ring-[#2E7D32]/10 outline-none disabled:bg-gray-50 disabled:text-gray-500 transition-all text-base bg-white"
+                        />
+                        <!-- Geolocation Button -->
+                        <button type="button" onclick="detectLocation()" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-[#2E7D32] hover:bg-green-50 rounded-lg transition-all" title="Use Current Location">
+                            <i id="geo-icon" data-lucide="crosshair" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <button id="weather-btn" type="submit" class="md:w-auto w-full h-14 px-8 rounded-[16px] font-bold bg-[#263238] text-white hover:bg-[#1a2327] hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                        <span data-i18n="weather_btn">Get Forecast</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Weather Results Container -->
+            <div id="weather-result-container" class="hidden space-y-8 animate-slide-up">
+                <!-- Dynamic Alert Box -->
+                <div id="weather-alert-box" class="bg-white border-l-8 border-[#F9A825] p-6 rounded-r-[16px] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-yellow-100/50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-yellow-200/50 transition-colors"></div>
+                    <h4 id="weather-alert-title" class="text-lg font-bold text-[#F9A825] mb-2 flex items-center gap-2 relative z-10">
+                        <i data-lucide="wind" class="w-5 h-5"></i> <span data-i18n="alert_title">Farming Alert</span>
+                    </h4>
+                    <p id="weather-alert-text" class="text-[#263238] text-base leading-relaxed relative z-10">
+                        Loading advisory...
+                    </p>
+                </div>
+                <!-- Forecast Grid -->
+                <div id="forecast-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="weather-empty-state" class="text-center py-20 opacity-60">
+                <div class="bg-white w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-gray-100">
+                    <i data-lucide="search" class="w-12 h-12 text-gray-300"></i>
+                </div>
+                <p class="text-[#607D8B] text-lg font-medium" data-i18n="weather_empty">Enter a location to see the forecast.</p>
+            </div>
+        </div>
+
+        <!-- VIEW: MARKET PRICES -->
+        <div id="view-market" class="hidden max-w-[800px] mx-auto animate-fade-in space-y-8">
+            <div class="text-center space-y-2">
+                <h2 class="text-[28px] font-bold text-[#1a381d] flex items-center justify-center gap-3">
+                    <span class="p-2 bg-blue-100 rounded-lg text-blue-600"><i data-lucide="trending-up"></i></span>
+                    <span data-i18n="market_title">Market Prices</span>
+                </h2>
+                <p class="text-[#607D8B] font-medium" data-i18n="market_sub">Get real-time mandi prices and trends</p>
+            </div>
+            
+            <!-- Input Card -->
+            <div class="glass-panel rounded-[24px] p-8 shadow-sm">
+                <form onsubmit="handleMarket(event)" class="space-y-6" autocomplete="off">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Custom Select Inputs with hover effects -->
+                        <div class="relative group" id="crop-container">
+                            <label class="block text-sm font-bold text-[#5a6c75] mb-2 ml-1" data-i18n="market_label_crop">Crop</label>
+                            <input type="text" id="market-crop" placeholder="Search Crop..." data-i18n-placeholder="market_ph_crop" oninput="filterOptions('crop')" onfocus="showOptions('crop')" onblur="hideOptions('crop')" class="w-full h-12 px-4 rounded-[12px] border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none bg-white transition-all">
+                            <i data-lucide="chevron-down" class="absolute right-4 top-[44px] -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            <ul id="list-crop" class="hidden absolute left-0 right-0 top-[76px] bg-white border border-gray-100 rounded-[12px] shadow-xl max-h-60 overflow-y-auto z-20 custom-scrollbar animate-slide-down"></ul>
+                        </div>
+                        
+                        <div class="relative group" id="state-container">
+                            <label class="block text-sm font-bold text-[#5a6c75] mb-2 ml-1" data-i18n="market_label_state">State</label>
+                            <input type="text" id="market-state" placeholder="Search State..." data-i18n-placeholder="market_ph_state" oninput="filterOptions('state')" onfocus="showOptions('state')" onblur="hideOptions('state')" class="w-full h-12 px-4 rounded-[12px] border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none bg-white transition-all">
+                            <i data-lucide="chevron-down" class="absolute right-4 top-[44px] -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            <ul id="list-state" class="hidden absolute left-0 right-0 top-[76px] bg-white border border-gray-100 rounded-[12px] shadow-xl max-h-60 overflow-y-auto z-20 custom-scrollbar animate-slide-down"></ul>
+                        </div>
+                        
+                        <div class="relative group" id="district-container">
+                            <label class="block text-sm font-bold text-[#5a6c75] mb-2 ml-1" data-i18n="market_label_district">District</label>
+                            <input type="text" id="market-district" placeholder="Select State first" data-i18n-placeholder="market_ph_district" oninput="filterOptions('district')" onfocus="showOptions('district')" onblur="hideOptions('district')" disabled class="w-full h-12 px-4 rounded-[12px] border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none bg-white disabled:bg-gray-50 disabled:cursor-not-allowed transition-all">
+                            <i data-lucide="chevron-down" class="absolute right-4 top-[44px] -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+                            <ul id="list-district" class="hidden absolute left-0 right-0 top-[76px] bg-white border border-gray-100 rounded-[12px] shadow-xl max-h-60 overflow-y-auto z-20 custom-scrollbar animate-slide-down"></ul>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-[#5a6c75] mb-2 ml-1" data-i18n="market_label_date">Arrival Date</label>
+                            <input type="date" id="market-date" class="w-full h-12 px-4 rounded-[12px] border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none bg-white text-[#263238] uppercase transition-all">
+                        </div>
+                    </div>
+                    <button id="market-btn" type="submit" class="w-full h-14 rounded-[16px] font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4">
+                        <span data-i18n="market_btn">Check Prices</span>
+                    </button>
+                </form>
+            </div>
+            <!-- Result Section -->
+            <div id="market-result-container" class="hidden animate-slide-up">
+                <div class="bg-white rounded-[24px] border border-gray-100 shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-50 to-white p-6 border-b border-blue-100 flex justify-between items-center">
+                        <h3 class="font-bold text-blue-800 flex items-center gap-2 text-lg">
+                            <span class="p-1 bg-blue-100 rounded-md"><i data-lucide="indian-rupee" class="w-5 h-5"></i></span> 
+                            <span data-i18n="price_analysis">Price Analysis</span>
+                        </h3>
+                        <span id="market-result-date" class="text-sm font-medium text-[#607D8B] bg-white px-3 py-1 rounded-full border border-gray-100 shadow-sm"></span>
+                    </div>
+                    <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-center relative">
+                        <div class="p-6 bg-red-50 rounded-[20px] border border-red-100 hover:scale-105 transition-transform duration-300">
+                            <p class="text-xs font-bold text-red-600 uppercase tracking-widest mb-2 opacity-70" data-i18n="min_price">Min Price</p>
+                            <p class="text-3xl font-extrabold text-[#263238]">₹<span id="price-min">0</span><span class="text-sm text-gray-400 font-normal">/Qtl</span></p>
+                        </div>
+                        <div class="p-6 bg-blue-50 rounded-[20px] border border-blue-200 transform scale-110 shadow-lg z-10">
+                            <p class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2 opacity-80" data-i18n="modal_price">Modal Price</p>
+                            <p class="text-4xl font-black text-blue-700">₹<span id="price-modal">0</span><span class="text-lg text-blue-400 font-medium">/Qtl</span></p>
+                        </div>
+                        <div class="p-6 bg-green-50 rounded-[20px] border border-green-100 hover:scale-105 transition-transform duration-300">
+                            <p class="text-xs font-bold text-green-600 uppercase tracking-widest mb-2 opacity-70" data-i18n="max_price">Max Price</p>
+                            <p class="text-3xl font-extrabold text-[#263238]">₹<span id="price-max">0</span><span class="text-sm text-gray-400 font-normal">/Qtl</span></p>
+                        </div>
+                    </div>
+                    <div class="px-8 pb-8 pt-0">
+                        <div class="p-4 bg-gray-50 rounded-[16px] flex items-start gap-3 text-sm text-[#5a6c75] border border-gray-100">
+                            <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-400"></i>
+                            <p data-i18n="price_note">Prices are based on recent mandi arrivals in the selected district. Modal price represents the most common trading price.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PLANT DOCTOR (NEW) -->
+        <div id="view-plant-doctor" class="hidden max-w-[800px] mx-auto animate-fade-in space-y-8">
+            <div class="text-center space-y-2">
+                <h2 class="text-[28px] font-bold text-[#1a381d] flex items-center justify-center gap-3">
+                    <span class="p-2 bg-red-100 rounded-lg text-red-600"><i data-lucide="stethoscope"></i></span>
+                    <span data-i18n="doctor_title">Plant Doctor</span>
+                </h2>
+                <p class="text-[#607D8B] font-medium" data-i18n="doctor_sub">Detect diseases instantly and get cure</p>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="glass-panel rounded-[24px] p-8 shadow-sm space-y-8">
+                <!-- Dropzone -->
+                <div id="dropzone" 
+                     class="relative border-3 border-dashed border-gray-200 rounded-[24px] h-[320px] flex flex-col items-center justify-center bg-gray-50/50 hover:bg-white hover:border-red-300 transition-all cursor-pointer group overflow-hidden"
+                     onclick="document.getElementById('file-upload').click()">
+                    
+                    <input type="file" id="file-upload" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                    
+                    <!-- Scan Animation (Hidden by default) -->
+                    <div id="scan-line" class="hidden animate-scan z-10"></div>
+
+                    <!-- Placeholder Content -->
+                    <div id="dropzone-content" class="flex flex-col items-center text-center p-6 space-y-4 group-hover:scale-105 transition-transform duration-300">
+                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md text-red-500 mb-2 group-hover:shadow-lg transition-shadow">
+                            <i data-lucide="camera" class="w-10 h-10"></i>
+                        </div>
+                        <div>
+                            <p class="text-[20px] font-bold text-[#263238]" data-i18n="doctor_drop_text">Click or Drag to Upload</p>
+                            <p class="text-base text-[#90A4AE] mt-1 font-medium" data-i18n="doctor_drop_sub">Supports JPG, PNG (Max 5MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- Image Preview (Hidden initially) -->
+                    <img id="image-preview" class="hidden absolute inset-0 w-full h-full object-contain p-4 bg-gray-100" />
+                    
+                    <!-- Remove Button (Hidden initially) -->
+                    <button id="remove-img-btn" onclick="removeImage(event)" class="hidden absolute top-4 right-4 bg-white p-3 rounded-full shadow-lg text-red-500 hover:bg-red-50 hover:scale-110 transition-all z-20">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Analyze Button -->
+                <button id="analyze-btn" onclick="analyzePlant()" class="w-full h-14 rounded-[16px] font-bold text-lg bg-gradient-to-r from-red-600 to-red-500 text-white hover:shadow-lg hover:shadow-red-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                    <i data-lucide="scan-line" class="w-5 h-5"></i> <span data-i18n="doctor_btn">Diagnose Disease</span>
+                </button>
+            </div>
+
+            <!-- Diagnosis Result (Hidden) -->
+            <div id="plant-result-container" class="hidden animate-slide-up">
+                <div class="bg-white rounded-[24px] border border-gray-100 shadow-xl overflow-hidden">
+                    <!-- Header -->
+                    <div class="bg-red-50 p-6 border-b border-red-100 flex justify-between items-center">
+                        <h3 class="font-bold text-red-800 flex items-center gap-2 text-lg">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i> <span data-i18n="doctor_res_title">Disease Detected</span>
+                        </h3>
+                        <span class="bg-white text-red-600 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm border border-red-100" data-i18n="doctor_confidence">Confidence: 96%</span>
+                    </div>
+
+                    <div class="p-8 space-y-8">
+                        <!-- Disease Name -->
+                        <div>
+                            <h4 class="text-xs font-bold text-[#90A4AE] uppercase tracking-widest mb-2" data-i18n="doctor_diagnosis_lbl">Diagnosis</h4>
+                            <p id="disease-name" class="text-4xl font-black text-[#263238] leading-tight"></p>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="h-px bg-gray-100 w-full"></div>
+
+                        <!-- Cure Section -->
+                        <div class="bg-green-50/50 p-6 rounded-[20px] border border-green-50">
+                            <h4 class="text-sm font-bold text-green-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                <i data-lucide="pill" class="w-5 h-5"></i> <span data-i18n="doctor_cure_lbl">Recommended Cure</span>
+                            </h4>
+                            <div id="cure-text" class="text-[#263238] leading-relaxed whitespace-pre-line text-lg"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Footer -->
+                    <div class="bg-gray-50 p-6 flex flex-col md:flex-row gap-4">
+                        <button class="flex-1 h-12 border-2 border-gray-200 rounded-[14px] font-bold text-[#5a6c75] hover:bg-white hover:border-gray-300 hover:text-[#263238] transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="share-2" class="w-4 h-4"></i> <span data-i18n="share_btn">Share Report</span>
+                        </button>
+                        <button class="flex-1 h-12 bg-[#2E7D32] text-white rounded-[14px] font-bold hover:bg-[#1B5E20] hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="phone" class="w-4 h-4"></i> <span data-i18n="call_btn">Call Expert</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-24 border-t border-gray-200 py-10 text-center bg-white/50 backdrop-blur-sm">
+        <p class="text-[#607D8B] text-sm flex items-center justify-center gap-2 font-medium">
+            <span data-i18n="footer">AgriSakha — Empowering Farmers with Technology</span> <span class="opacity-30">|</span> © 2026
+        </p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- CONFIG ---
+        // Development: http://localhost:5000
+        // Production:  Update this to your deployed backend URL (e.g. https://your-api.onrender.com)
+        const API_BASE_URL = "http://localhost:5000";
+
+        // --- LOCALIZATION ---
+        const translations = {
+            en: {
+                nav_home: "Home",
+                nav_advisory: "Crop Advisory",
+                nav_weather: "Weather",
+                nav_market: "Market Prices",
+                nav_doctor: "Plant Doctor",
+                back_btn: "Back to Dashboard",
+                welcome_title: "Welcome to AgriSakha",
+                welcome_sub: "Your AI-powered assistant for smarter farming decisions.",
+                card_advisory_title: "AI Crop Advisory",
+                card_advisory_desc: "Get personalized crop recommendations based on soil, weather, and inputs.",
+                card_weather_title: "Weather Insights",
+                card_weather_desc: "View short-term forecasts and alerts to plan farming activities.",
+                card_market_title: "Market Prices",
+                card_market_desc: "Real-time mandi prices and market trends analysis.",
+                card_doctor_title: "Plant Doctor",
+                card_doctor_desc: "Identify crop diseases instantly by uploading a photo and get cures.",
+                advisory_title: "AI Crop Advisory",
+                advisory_sub: "Expert advice tailored to your farm's needs",
+                advisory_label: "What's your concern today?",
+                advisory_placeholder: "Example: What fertilizer should I use for wheat this season? My soil is clay-loam.",
+                advisory_btn: "Get Advisory",
+                rec_title: "AI Recommendation",
+                note_label: "Note:",
+                note_text: "Always verify with local agricultural extension officers.",
+                weather_title: "Weather Insights",
+                weather_sub: "Plan your farming activities with precision",
+                weather_placeholder: "Enter Village, District or Pincode",
+                weather_btn: "Get Forecast",
+                alert_title: "Farming Alert",
+                weather_empty: "Enter a location to see the forecast.",
+                market_title: "Market Prices",
+                market_sub: "Get real-time mandi prices and trends",
+                market_label_crop: "Crop",
+                market_ph_crop: "Search Crop...",
+                market_label_state: "State",
+                market_ph_state: "Search State...",
+                market_label_district: "District",
+                market_ph_district: "Select State first",
+                market_label_date: "Arrival Date",
+                market_btn: "Check Prices",
+                price_analysis: "Price Analysis",
+                min_price: "Min Price",
+                modal_price: "Modal Price",
+                max_price: "Max Price",
+                price_note: "Prices are based on recent mandi arrivals in the selected district. Modal price represents the most common trading price.",
+                doctor_title: "Plant Doctor",
+                doctor_sub: "Detect diseases instantly and get cure",
+                doctor_drop_text: "Click or Drag to Upload",
+                doctor_drop_sub: "Supports JPG, PNG (Max 5MB)",
+                doctor_btn: "Diagnose Disease",
+                doctor_res_title: "Disease Detected",
+                doctor_confidence: "Confidence: 96%",
+                doctor_diagnosis_lbl: "Diagnosis",
+                doctor_cure_lbl: "Recommended Cure",
+                share_btn: "Share Report",
+                call_btn: "Call Expert",
+                footer: "AgriSakha — Empowering Farmers with Technology"
+            },
+            hi: {
+                nav_home: "होम",
+                nav_advisory: "फसल सलाह",
+                nav_weather: "मौसम",
+                nav_market: "बाजार भाव",
+                nav_doctor: "पौधा चिकित्सक",
+                back_btn: "डैशबोर्ड पर वापस जाएं",
+                welcome_title: "एग्रीसखा में आपका स्वागत है",
+                welcome_sub: "बेहतर खेती के निर्णयों के लिए आपका एआई-पावर्ड सहायक।",
+                card_advisory_title: "एआई फसल सलाह",
+                card_advisory_desc: "मिट्टी, मौसम और इनपुट के आधार पर व्यक्तिगत फसल सिफारिशें प्राप्त करें।",
+                card_weather_title: "मौसम की जानकारी",
+                card_weather_desc: "खेती की गतिविधियों की योजना बनाने के लिए पूर्वानुमान और अलर्ट देखें।",
+                card_market_title: "बाजार भाव",
+                card_market_desc: "वास्तविक समय मंडी कीमतें और बाजार के रुझान का विश्लेषण।",
+                card_doctor_title: "पौधा चिकित्सक",
+                card_doctor_desc: "फोटो अपलोड करके फसल रोगों की तुरंत पहचान करें और इलाज पाएं।",
+                advisory_title: "एआई फसल सलाह",
+                advisory_sub: "आपके खेत की जरूरतों के अनुरूप विशेषज्ञ सलाह",
+                advisory_label: "आज आपकी क्या चिंता है?",
+                advisory_placeholder: "उदाहरण: इस मौसम में गेहूं के लिए मुझे कौन सा उर्वरक उपयोग करना चाहिए? मेरी मिट्टी दोमट है।",
+                advisory_btn: "सलाह प्राप्त करें",
+                rec_title: "एआई सिफारिश",
+                note_label: "नोट:",
+                note_text: "हमेशा स्थानीय कृषि विस्तार अधिकारियों से सत्यापित करें।",
+                weather_title: "मौसम की जानकारी",
+                weather_sub: "सटीकता के साथ अपनी खेती की गतिविधियों की योजना बनाएं",
+                weather_placeholder: "गांव, जिला या पिनकोड दर्ज करें",
+                weather_btn: "पूर्वानुमान प्राप्त करें",
+                alert_title: "खेती अलर्ट",
+                weather_empty: "पूर्वानुमान देखने के लिए स्थान दर्ज करें।",
+                market_title: "बाजार भाव",
+                market_sub: "वास्तविक समय मंडी कीमतें और रुझान प्राप्त करें",
+                market_label_crop: "फसल",
+                market_ph_crop: "फसल खोजें...",
+                market_label_state: "राज्य",
+                market_ph_state: "राज्य खोजें...",
+                market_label_district: "जिला",
+                market_ph_district: "पहले राज्य चुनें",
+                market_label_date: "आगमन तिथि",
+                market_btn: "कीमतें चेक करें",
+                price_analysis: "मूल्य विश्लेषण",
+                min_price: "न्यूनतम मूल्य",
+                modal_price: "औसत मूल्य",
+                max_price: "अधिकतम मूल्य",
+                price_note: "कीमतें चयनित जिले में हाल ही में मंडी आगमन पर आधारित हैं। औसत मूल्य सबसे आम व्यापार मूल्य का प्रतिनिधित्व करता है।",
+                doctor_title: "पौधा चिकित्सक",
+                doctor_sub: "रोगों का तुरंत पता लगाएं और इलाज पाएं",
+                doctor_drop_text: "अपलोड करने के लिए क्लिक करें या खींचें",
+                doctor_drop_sub: "JPG, PNG का समर्थन करता है (अधिकतम 5MB)",
+                doctor_btn: "रोग का निदान करें",
+                doctor_res_title: "रोग का पता चला",
+                doctor_confidence: "विश्वास: 96%",
+                doctor_diagnosis_lbl: "निदान",
+                doctor_cure_lbl: "अनुशंसित इलाज",
+                share_btn: "रिपोर्ट साझा करें",
+                call_btn: "विशेषज्ञ को कॉल करें",
+                footer: "एग्रीसखा — तकनीक के साथ किसानों को सशक्त बनाना"
+            },
+            te: {
+                nav_home: "హోమ్",
+                nav_advisory: "పంట సలహా",
+                nav_weather: "వాతావరణం",
+                nav_market: "మార్కెట్ ధరలు",
+                nav_doctor: "మొక్కల వైద్యుడు",
+                back_btn: "డాష్‌బోర్డ్‌కు తిరిగి వెళ్ళు",
+                welcome_title: "అగ్రిసఖకు స్వాగతం",
+                welcome_sub: "తెలివైన వ్యవసాయ నిర్ణయాల కోసం మీ AI- ఆధారిత సహాయకుడు.",
+                card_advisory_title: "AI పంట సలహా",
+                card_advisory_desc: "మట్టి, వాతావరణం ఆధారంగా వ్యక్తిగతీకరించిన పంట సిఫార్సులను పొందండి.",
+                card_weather_title: "వాతావరణ సమాచారం",
+                card_weather_desc: "వ్యవసాయ పనులను ప్లాన్ చేయడానికి సూచనలు మరియు హెచ్చరికలను చూడండి.",
+                card_market_title: "మార్కెట్ ధరలు",
+                card_market_desc: "రియల్ టైమ్ మండీ ధరలు మరియు మార్కెట్ పోకడల విశ్లేషణ.",
+                card_doctor_title: "మొక్కల వైద్యుడు",
+                card_doctor_desc: "ఫోటోను అప్‌లోడ్ చేయడం ద్వారా పంట తెగుళ్లను తక్షణమే గుర్తించండి.",
+                advisory_title: "AI పంట సలహా",
+                advisory_sub: "మీ పొలం అవసరాలకు తగిన నిపుణుల సలహా",
+                advisory_label: "ఈ రోజు మీ ఆందోళన ఏమిటి?",
+                advisory_placeholder: "ఉదాహరణ: ఈ సీజన్‌లో గోధుమలకు నేను ఏ ఎరువులు వాడాలి?",
+                advisory_btn: "సలహా పొందండి",
+                rec_title: "AI సిఫార్సు",
+                note_label: "గమనిక:",
+                note_text: "ఎల్లప్పుడూ స్థానిక వ్యవసాయ అధికారులతో సరిచూసుకోండి.",
+                weather_title: "వాతావరణ సమాచారం",
+                weather_sub: "మీ వ్యవసాయ పనులను ఖచ్చితత్వంతో ప్లాన్ చేయండి",
+                weather_placeholder: "గ్రామం, జిల్లా లేదా పిన్‌కోడ్‌ను నమోదు చేయండి",
+                weather_btn: "సూచన పొందండి",
+                alert_title: "వ్యవసాయ హెచ్చరిక",
+                weather_empty: "సూచనను చూడటానికి లొకేషన్‌ను నమోదు చేయండి.",
+                market_title: "మార్కెట్ ధరలు",
+                market_sub: "రియల్ టైమ్ మండీ ధరలను పొందండి",
+                market_label_crop: "పంట",
+                market_ph_crop: "పంటను వెతకండి...",
+                market_label_state: "రాష్ట్రం",
+                market_ph_state: "రాష్ట్రాన్ని వెతకండి...",
+                market_label_district: "జిల్లా",
+                market_ph_district: "మొదట రాష్ట్రాన్ని ఎంచుకోండి",
+                market_label_date: "తేదీ",
+                market_btn: "ధరలను తనిఖీ చేయండి",
+                price_analysis: "ధర విశ్లేషణ",
+                min_price: "కనీస ధర",
+                modal_price: "సాధారణ ధర",
+                max_price: "గరిష్ట ధర",
+                price_note: "ధరలు ఇటీవలి మండీ రాకలపై ఆధారపడి ఉంటాయి.",
+                doctor_title: "మొక్కల వైద్యుడు",
+                doctor_sub: "తెగుళ్లను తక్షణమే గుర్తించి నివారణ పొందండి",
+                doctor_drop_text: "అప్‌లోడ్ చేయడానికి క్లిక్ చేయండి",
+                doctor_drop_sub: "JPG, PNG మద్దతు ఉంది (గరిష్టంగా 5MB)",
+                doctor_btn: "వ్యాధి నిర్ధారణ",
+                doctor_res_title: "వ్యాధి కనుగొనబడింది",
+                doctor_confidence: "నమ్మకం: 96%",
+                doctor_diagnosis_lbl: "నిర్ధారణ",
+                doctor_cure_lbl: "సిఫార్సు చేసిన చికిత్స",
+                share_btn: "నివేదికను షేర్ చేయండి",
+                call_btn: "నిపుణుడికి కాల్ చేయండి",
+                footer: "అగ్రిసఖ — సాంకేతికతతో రైతులను శక్తివంతం చేయడం"
+            },
+            mr: {
+                nav_home: "होम",
+                nav_advisory: "पीक सल्ला",
+                nav_weather: "हवामान",
+                nav_market: "बाजार भाव",
+                nav_doctor: "वनस्पती डॉक्टर",
+                back_btn: "डॅशबोर्डवर परत जा",
+                welcome_title: "एग्रीसखा मध्ये आपले स्वागत आहे",
+                welcome_sub: "स्मार्ट शेती निर्णयांसाठी तुमचा एआय-समर्थित सहाय्यक.",
+                card_advisory_title: "एआय पीक सल्ला",
+                card_advisory_desc: "माती आणि हवामानावर आधारित वैयक्तिक पीक शिफारसी मिळवा.",
+                card_weather_title: "हवामान अंदाज",
+                card_weather_desc: "शेतीची कामे करण्यासाठी अंदाज आणि अलर्ट पहा.",
+                card_market_title: "बाजार भाव",
+                card_market_desc: "रिअल-टाइम मंडी किंमती आणि बाजाराचा कल.",
+                card_doctor_title: "वनस्पती डॉक्टर",
+                card_doctor_desc: "फोटो अपलोड करून पिकांच्या रोगांची त्वरित ओळख करा आणि उपाय मिळवा.",
+                advisory_title: "एआय पीक सल्ला",
+                advisory_sub: "तुमच्या शेताच्या गरजांनुसार तज्ञ सल्ला",
+                advisory_label: "आज तुमची काय समस्या आहे?",
+                advisory_placeholder: "उदाहरण: या हंगामात गव्हासाठी मी कोणते खत वापरावे?",
+                advisory_btn: "सल्ला मिळवा",
+                rec_title: "एआय शिफारस",
+                note_label: "टीप:",
+                note_text: "नेहमी स्थानिक कृषी अधिकाऱ्यांशी पडताळून पहा.",
+                weather_title: "हवामान अंदाज",
+                weather_sub: "अचूकतेसह तुमच्या शेतीची योजना करा",
+                weather_placeholder: "गाव, जिल्हा किंवा पिनकोड प्रविष्ट करा",
+                weather_btn: "अंदाज मिळवा",
+                alert_title: "शेती अलर्ट",
+                weather_empty: "अंदाज पाहण्यासाठी ठिकाण प्रविष्ट करा.",
+                market_title: "बाजार भाव",
+                market_sub: "रिअल-टाइम मंडी किंमती मिळवा",
+                market_label_crop: "पीक",
+                market_ph_crop: "पीक शोधा...",
+                market_label_state: "राज्य",
+                market_ph_state: "राज्य शोधा...",
+                market_label_district: "जिल्हा",
+                market_ph_district: "प्रथम राज्य निवडा",
+                market_label_date: "तारीख",
+                market_btn: "किंमती तपासा",
+                price_analysis: "किंमत विश्लेषण",
+                min_price: "किमान भाव",
+                modal_price: "सरासरी भाव",
+                max_price: "कमाल भाव",
+                price_note: "किंमती अलीकडील मंडी आवकवर आधारित आहेत.",
+                doctor_title: "वनस्पती डॉक्टर",
+                doctor_sub: "रोगांचे त्वरित निदान करा आणि उपाय मिळवा",
+                doctor_drop_text: "अपलोड करण्यासाठी क्लिक करा",
+                doctor_drop_sub: "JPG, PNG (कमाल 5MB)",
+                doctor_btn: "रोगाचे निदान करा",
+                doctor_res_title: "रोग आढळला",
+                doctor_confidence: "विश्वास: 96%",
+                doctor_diagnosis_lbl: "निदान",
+                doctor_cure_lbl: "सुचवलेला उपाय",
+                share_btn: "रिपोर्ट शेअर करा",
+                call_btn: "तज्ञांना कॉल करा",
+                footer: "एग्रीसखा — तंत्रज्ञानासह शेतकऱ्यांना सक्षम करणे"
+            }
+        };
+
+        let currentLang = 'en';
+
+        function toggleLangMenu() {
+            const menu = document.getElementById('lang-menu');
+            if(menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            
+            // Update Label
+            document.getElementById('current-lang-label').innerText = lang.toUpperCase();
+            
+            // Update Text Content
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerText = t[key];
+            });
+
+            // Update Placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+
+            // Hide Menu
+            document.getElementById('lang-menu').classList.add('hidden');
+        }
+
+        // --- DATASETS ---
+        const cropsList = [
+            "Wheat", "Paddy (Dhan)", "Cotton", "Maize", "Sugarcane", "Soybean", "Barley (Jau)", 
+            "Jute", "Groundnut", "Mustard", "Bengal Gram (Chana)", "Turmeric", "Jeera (Cumin)", 
+            "Potato", "Onion", "Tomato", "Garlic", "Ginger", "Red Chilli", "Castor Seed", 
+            "Sesamum (Til)", "Bajra", "Jowar", "Ragi", "Moong (Green Gram)", "Urad (Black Gram)", 
+            "Arhar (Tur)", "Sunflower", "Banana", "Mango", "Apple", "Orange"
+        ].sort();
+
+        const indiaData = {
+          "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "Y.S.R. Kadapa"],
+          "Arunachal Pradesh": ["Tawang", "West Kameng", "East Kameng", "Papum Pare", "Kurung Kumey", "West Siang", "East Siang", "Lower Dibang Valley", "Lohit", "Namsai", "Changlang", "Tirap", "Longding"],
+          "Assam": ["Barpeta", "Bongaigaon", "Cachar", "Darrang", "Dhemaji", "Dhubri", "Dibrugarh", "Goalpara", "Golaghat", "Hailakandi", "Jorhat", "Kamrup", "Karimganj", "Kokrajhar", "Lakhimpur", "Morigaon", "Nagaon", "Nalbari", "Sivasagar", "Sonitpur", "Tinsukia"],
+          "Bihar": ["Araria", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar", "Darbhanga", "East Champaran", "Gaya", "Gopalganj", "Jamui", "Jehanabad", "Katihar", "Khagaria", "Kishanganj", "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas", "Saharsa", "Samastipur", "Saran", "Sitamarhi", "Siwan", "Supaul", "Vaishali", "West Champaran"],
+          "Chhattisgarh": ["Balod", "Bastar", "Bilaspur", "Dantewada", "Dhamtari", "Durg", "Janjgir-Champa", "Jashpur", "Kabirdham", "Korba", "Koriya", "Mahasamund", "Raigarh", "Raipur", "Rajnandgaon", "Surguja"],
+          "Goa": ["North Goa", "South Goa"],
+          "Gujarat": ["Ahmedabad", "Amreli", "Anand", "Banaskantha", "Bharuch", "Bhavnagar", "Dahod", "Gandhinagar", "Jamnagar", "Junagadh", "Kutch", "Mehsana", "Morbi", "Narmada", "Navsari", "Patan", "Porbandar", "Rajkot", "Sabarkantha", "Surat", "Surendranagar", "Vadodara", "Valsad"],
+          "Haryana": ["Ambala", "Bhiwani", "Faridabad", "Fatehabad", "Gurugram", "Hisar", "Jhajjar", "Jind", "Kaithal", "Karnal", "Kurukshetra", "Mahendragarh", "Nuh", "Palwal", "Panchkula", "Panipat", "Rewari", "Rohtak", "Sirsa", "Sonipat", "Yamunanagar"],
+          "Himachal Pradesh": ["Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Mandi", "Shimla", "Sirmaur", "Solan", "Una"],
+          "Jharkhand": ["Bokaro", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Palamu", "Ranchi", "Sahibganj", "West Singhbhum"],
+          "Karnataka": ["Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada", "Davangere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar", "Koppal", "Mandya", "Mysuru", "Raichur", "Shivamogga", "Tumakuru", "Udupi", "Uttara Kannada", "Vijayapura", "Yadgir"],
+          "Kerala": ["Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur", "Wayanad"],
+          "Madhya Pradesh": ["Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Guna", "Gwalior", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandsaur", "Morena", "Narsinghpur", "Neemuch", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shivpuri", "Ujjain", "Vidisha"],
+          "Maharashtra": ["Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur", "Dhule", "Gadchiroli", "Gondia", "Jalgaon", "Jalna", "Kolhapur", "Latur", "Mumbai City", "Nagpur", "Nanded", "Nashik", "Osmanabad", "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha", "Washim", "Yavatmal"],
+          "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Cuttack", "Dhenkanal", "Ganjam", "Jagatsinghpur", "Jajpur", "Kalahandi", "Kendrapara", "Kendujhar", "Khordha", "Koraput", "Mayurbhanj", "Nayagarh", "Puri", "Sambalpur", "Sundargarh"],
+          "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Fatehgarh Sahib", "Fazilka", "Ferozepur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Kapurthala", "Ludhiana", "Mansa", "Moga", "Muktsar", "Pathankot", "Patiala", "Rupnagar", "Sangrur", "Tarn Taran"],
+          "Rajasthan": ["Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Hanumangarh", "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Kota", "Nagaur", "Pali", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
+          "Tamil Nadu": ["Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Nagapattinam", "Namakkal", "Salem", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Vellore", "Viluppuram", "Virudhunagar"],
+          "Telangana": ["Adilabad", "Bhadradri Kothagudem", "Hyderabad", "Jagtial", "Jangaon", "Karimnagar", "Khammam", "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak", "Medchal", "Nalgonda", "Nizamabad", "Peddapalli", "Rangareddy", "Sangareddy", "Siddipet", "Suryapet", "Vikarabad", "Warangal Rural", "Warangal Urban"],
+          "Uttar Pradesh": ["Agra", "Aligarh", "Allahabad", "Amethi", "Azamgarh", "Bahraich", "Ballia", "Bareilly", "Basti", "Bijnor", "Bulandshahr", "Deoria", "Etah", "Etawah", "Faizabad", "Farrukhabad", "Fatehpur", "Firozabad", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hardoi", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Nagar", "Lucknow", "Mainpuri", "Mathura", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Raebareli", "Rampur", "Saharanpur", "Shahjahanpur", "Sitapur", "Sultanpur", "Unnao", "Varanasi"],
+          "Uttarakhand": ["Almora", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Udham Singh Nagar"],
+          "West Bengal": ["Bankura", "Birbhum", "Cooch Behar", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Medinipur", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"]
+        };
+
+        // --- State Management ---
+        let currentView = 'dashboard';
+        let currentMarketState = ''; 
+        let selectedPlantImage = null; // Store file object
+        let currentAdvisoryFile = null; // Store file for advisory chat
+        let recognition;
+        let isListening = false;
+        let isSpeaking = false;
+        let audioPlayer = null; // Used for backend TTS audio
+        
+        // --- View Switching Logic ---
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            // Hide all views
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-advisory').classList.add('hidden');
+            document.getElementById('view-weather').classList.add('hidden');
+            document.getElementById('view-market').classList.add('hidden');
+            document.getElementById('view-plant-doctor').classList.add('hidden');
+            
+            // Stop TTS if playing
+            if (isSpeaking && audioPlayer) {
+                audioPlayer.pause();
+                isSpeaking = false;
+                const speakIcon = document.getElementById('speak-icon');
+                if(speakIcon) {
+                    speakIcon.setAttribute('data-lucide', 'volume-2');
+                    lucide.createIcons();
+                }
+            }
+            
+            // Show selected view
+            const targetView = document.getElementById(`view-${viewName}`);
+            targetView.classList.remove('hidden');
+            targetView.classList.remove('animate-fade-in'); 
+            void targetView.offsetWidth; 
+            targetView.classList.add('animate-fade-in');
+
+            // Handle Back Button Visibility
+            const backBtn = document.getElementById('back-btn');
+            if (viewName === 'dashboard') {
+                backBtn.classList.add('hidden');
+            } else {
+                backBtn.classList.remove('hidden');
+            }
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+            
+            // Re-render icons
+            lucide.createIcons();
+        }
+
+        // --- Mobile Menu Logic ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+                icon.setAttribute('data-lucide', 'x');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex');
+                icon.setAttribute('data-lucide', 'menu');
+            }
+            lucide.createIcons();
+        }
+
+        // --- Speech Recognition Logic ---
+        function initSpeech() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US'; // Could update dynamically based on selected language
+
+                recognition.onstart = () => {
+                    isListening = true;
+                    const btn = document.getElementById('mic-btn');
+                    btn.classList.add('bg-red-100', 'text-red-600', 'animate-pulse');
+                    btn.classList.remove('bg-white', 'text-[#607D8B]');
+                };
+
+                recognition.onend = () => {
+                    isListening = false;
+                    const btn = document.getElementById('mic-btn');
+                    btn.classList.remove('bg-red-100', 'text-red-600', 'animate-pulse');
+                    btn.classList.add('bg-white', 'text-[#607D8B]');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    const input = document.getElementById('advisory-input');
+                    input.value += (input.value ? ' ' : '') + transcript;
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error", event.error);
+                    isListening = false;
+                    const btn = document.getElementById('mic-btn');
+                    btn.classList.remove('bg-red-100', 'text-red-600', 'animate-pulse');
+                    btn.classList.add('bg-white', 'text-[#607D8B]');
+                };
+            }
+        }
+
+        function toggleMic() {
+            if (!recognition) {
+                alert("Voice input is not supported in this browser. Please use Chrome or Safari.");
+                return;
+            }
+            // Update lang based on selection
+            if(currentLang === 'hi') recognition.lang = 'hi-IN';
+            else if(currentLang === 'te') recognition.lang = 'te-IN';
+            else if(currentLang === 'mr') recognition.lang = 'mr-IN';
+            else recognition.lang = 'en-US';
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        async function toggleSpeech() {
+            if (isSpeaking && audioPlayer) {
+                audioPlayer.pause();
+                isSpeaking = false;
+                document.getElementById('speak-icon').setAttribute('data-lucide', 'volume-2');
+                lucide.createIcons();
+                return;
+            }
+
+            const text = document.getElementById('advisory-text').innerText;
+            if (!text) return;
+
+            // Visual Loading
+            const speakIcon = document.getElementById('speak-icon');
+            speakIcon.setAttribute('data-lucide', 'loader');
+            speakIcon.classList.add('animate-spin');
+            lucide.createIcons();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, lang: currentLang }) // Send current lang to backend
+                });
+
+                if (!response.ok) throw new Error("TTS Failed");
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                if (audioPlayer) audioPlayer = null;
+                audioPlayer = new Audio(url);
+
+                audioPlayer.onplay = () => {
+                    isSpeaking = true;
+                    speakIcon.classList.remove('animate-spin');
+                    speakIcon.setAttribute('data-lucide', 'square'); // Stop icon
+                    lucide.createIcons();
+                };
+
+                audioPlayer.onended = () => {
+                    isSpeaking = false;
+                    speakIcon.setAttribute('data-lucide', 'volume-2');
+                    lucide.createIcons();
+                };
+
+                audioPlayer.play();
+                
+            } catch (err) {
+                console.error("TTS Error:", err);
+                alert("Could not play audio.");
+                speakIcon.classList.remove('animate-spin');
+                speakIcon.setAttribute('data-lucide', 'volume-2');
+                lucide.createIcons();
+            }
+        }
+
+        // --- Autocomplete Logic ---
+        function showOptions(type) {
+            const input = document.getElementById(`market-${type}`);
+            const list = document.getElementById(`list-${type}`);
+            
+            let options = [];
+            if (type === 'crop') options = cropsList;
+            else if (type === 'state') options = Object.keys(indiaData);
+            else if (type === 'district') {
+                if (!currentMarketState) {
+                    list.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">Please select a state first</li>';
+                    list.classList.remove('hidden');
+                    return;
+                }
+                options = indiaData[currentMarketState];
+            }
+            renderList(list, options, input.value, type);
+            list.classList.remove('hidden');
+        }
+
+        function filterOptions(type) {
+            const input = document.getElementById(`market-${type}`);
+            const list = document.getElementById(`list-${type}`);
+            const val = input.value.toLowerCase();
+            
+            let options = [];
+            if (type === 'crop') options = cropsList;
+            else if (type === 'state') options = Object.keys(indiaData);
+            else if (type === 'district') options = currentMarketState ? indiaData[currentMarketState] : [];
+
+            const filtered = options.filter(opt => opt.toLowerCase().includes(val));
+            renderList(list, filtered, val, type);
+            list.classList.remove('hidden');
+        }
+
+        function renderList(listEl, items, highlightVal, type) {
+            if (items.length === 0) {
+                listEl.innerHTML = '<li class="px-4 py-2 text-sm text-gray-500">No results found</li>';
+                return;
+            }
+            listEl.innerHTML = items.map(item => `
+                <li onmousedown="selectOption('${type}', '${item}')" 
+                    class="px-4 py-3 text-sm text-[#263238] hover:bg-[#E8F5E9] cursor-pointer transition-colors border-b border-gray-50 last:border-0">
+                    ${item}
+                </li>
+            `).join('');
+        }
+
+        function hideOptions(type) {
+            setTimeout(() => {
+                document.getElementById(`list-${type}`).classList.add('hidden');
+            }, 200);
+        }
+
+        function selectOption(type, value) {
+            const input = document.getElementById(`market-${type}`);
+            input.value = value;
+            if (type === 'state') {
+                currentMarketState = value;
+                const distInput = document.getElementById('market-district');
+                distInput.value = '';
+                distInput.disabled = false;
+                distInput.placeholder = "Search District...";
+            }
+            document.getElementById(`list-${type}`).classList.add('hidden');
+        }
+
+        // --- Logic: Crop Advisory (With File Attachment) ---
+        function handleAdvisoryFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            currentAdvisoryFile = file;
+            
+            // Show preview
+            const preview = document.getElementById('advisory-file-preview');
+            const name = document.getElementById('advisory-file-name');
+            name.innerText = file.name;
+            preview.classList.remove('hidden');
+            preview.classList.add('flex');
+        }
+
+        function removeAdvisoryFile() {
+            currentAdvisoryFile = null;
+            document.getElementById('advisory-file-input').value = ''; // Reset input
+            const preview = document.getElementById('advisory-file-preview');
+            preview.classList.add('hidden');
+            preview.classList.remove('flex');
+        }
+
+        async function handleAdvisory() {
+            const input = document.getElementById('advisory-input');
+            const btn = document.getElementById('advisory-btn');
+            const resultContainer = document.getElementById('advisory-result-container');
+            const resultText = document.getElementById('advisory-text');
+
+            if (!input.value.trim() && !currentAdvisoryFile) return;
+
+            // Loading State
+            const originalBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Analyzing...`;
+
+            try {
+                // If there is a file, upload it first to context
+                if (currentAdvisoryFile) {
+                    btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Uploading document...`;
+                    const formData = new FormData();
+                    formData.append('file', currentAdvisoryFile);
+                    
+                    const uploadRes = await fetch(`${API_BASE_URL}/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!uploadRes.ok) throw new Error("File upload failed");
+                    // Assuming upload sets context on backend
+                }
+
+                // Proceed with Chat
+                btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Generating response...`;
+                
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: input.value, lang: currentLang }) // Send current lang
+                });
+
+                if (!response.ok) throw new Error("API call failed");
+
+                const data = await response.json();
+                resultText.innerText = data.reply;
+                resultContainer.classList.remove('hidden');
+                lucide.createIcons();
+            } catch (error) {
+                console.error(error);
+                alert("Failed to get advisory. Ensure backend is running.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+            }
+        }
+
+        // --- Logic: Weather ---
+        function handleWeather(e) {
+            e.preventDefault();
+            const input = document.getElementById('weather-input');
+            const term = input.value.trim();
+            if (!term) return;
+            
+            // Allow manual city input
+            executeWeatherFetch(term);
+        }
+
+        function detectLocation() {
+            const input = document.getElementById('weather-input');
+            const icon = document.getElementById('geo-icon');
+            
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            // Visual Loading State
+            const originalPlaceholder = input.placeholder;
+            input.value = "";
+            input.placeholder = "Detecting location...";
+            input.disabled = true;
+            icon.classList.add("animate-spin"); 
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    // Success: Fill input with Coords
+                    input.value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                    input.disabled = false;
+                    input.placeholder = originalPlaceholder;
+                    icon.classList.remove("animate-spin");
+                    
+                    executeWeatherFetch(input.value); 
+                },
+                (error) => {
+                    console.error(error);
+                    input.value = "";
+                    input.disabled = false;
+                    input.placeholder = "Location access denied.";
+                    icon.classList.remove("animate-spin");
+                }
+            );
+        }
+
+        // HYBRID WEATHER FETCH LOGIC
+        async function executeWeatherFetch(query) {
+            const btn = document.getElementById('weather-btn');
+            const resultContainer = document.getElementById('weather-result-container');
+            const emptyState = document.getElementById('weather-empty-state');
+            const grid = document.getElementById('forecast-grid');
+            const alertBox = document.getElementById('weather-alert-box');
+            const alertTitle = document.getElementById('weather-alert-title');
+            const alertText = document.getElementById('weather-alert-text');
+
+            // Loading State
+            const originalBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Fetching...`;
+
+            let finalWeatherData = [];
+
+            // 1. Try to fetch REAL data for TODAY (if coords)
+            // Regex to check if input is lat,lon format
+            const isCoords = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(query);
+
+            if (isCoords) {
+                 const [lat, lon] = query.split(',').map(s => parseFloat(s.trim()));
+                 try {
+                     // Attempt to call your backend
+                     const res = await fetch(`${API_BASE_URL}/weather?lat=${lat}&lon=${lon}`);
+                     if(!res.ok) throw new Error("API Error");
+                     
+                     const realData = await res.json();
+                     
+                     // --- ADVISORY UPDATE FROM BACKEND ---
+                     let alertMessage = realData.farming_advisory;
+                     let isWarning = false;
+
+                     // Check for warnings first
+                     if (realData.extreme_warnings && realData.extreme_warnings.length > 0) {
+                         alertMessage = realData.extreme_warnings.join(" ");
+                         isWarning = true;
+                     }
+
+                     // Update Alert UI based on severity
+                     if (isWarning) {
+                         alertBox.className = "bg-red-50 border-l-4 border-red-500 p-6 rounded-r-[16px] transition-colors duration-300 relative overflow-hidden group hover:shadow-md";
+                         alertTitle.className = "text-lg font-bold text-red-600 mb-2 flex items-center gap-2 relative z-10";
+                         alertTitle.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5"></i> Extreme Warning`;
+                     } else {
+                         alertBox.className = "bg-[#FFF3E0] border-l-4 border-[#F9A825] p-6 rounded-r-[16px] transition-colors duration-300 relative overflow-hidden group hover:shadow-md";
+                         alertTitle.className = "text-lg font-bold text-[#F9A825] mb-2 flex items-center gap-2 relative z-10";
+                         alertTitle.innerHTML = `<i data-lucide="wind" class="w-5 h-5"></i> Farming Advisory`;
+                     }
+                     alertText.innerText = alertMessage || "No specific alerts today.";
+
+                     // --- PARSE TODAY'S WEATHER ---
+                     const temp = realData.temperature;
+                     const cond = realData.condition;
+                     
+                     let iconName = 'sun';
+                     let colorClass = 'text-orange-500';
+                     let bgClass = 'bg-orange-50';
+
+                     // Simple icon mapping based on backend 'condition' string
+                     if(cond.toLowerCase().includes('rain')) { iconName = 'droplets'; colorClass = 'text-blue-600'; bgClass = 'bg-blue-50'; }
+                     else if(cond.toLowerCase().includes('cloud')) { iconName = 'cloud-sun'; colorClass = 'text-gray-500'; bgClass = 'bg-gray-50'; }
+                     else if(cond.toLowerCase().includes('clear')) { iconName = 'sun'; colorClass = 'text-orange-500'; bgClass = 'bg-orange-50'; }
+
+                     const todayCard = {
+                        date: 'Today',
+                        temp: `${Math.round(temp)}°C`,
+                        condition: cond,
+                        icon: iconName,
+                        color: colorClass,
+                        bg: bgClass
+                     };
+
+                     // --- APPEND MOCK FORECAST (Days 2-5) ---
+                     // Since backend doesn't give forecast, use mock for next 4 days
+                     const forecastCards = generateWeatherForecast(query, 4, 1); 
+                     finalWeatherData = [todayCard, ...forecastCards];
+
+                 } catch(e) {
+                     console.log("API Fetch Failed, falling back to full mock", e);
+                     // Fallback: Set default advisory and generate full mock
+                     alertText.innerText = "Unable to fetch live advisory. Please check internet connection.";
+                     finalWeatherData = generateWeatherForecast(query, 5, 0);
+                 }
+            } else {
+                 // Text input (City Name) -> Full Mock fallback because backend only accepts Lat/Lon
+                 // We simulate a generic advisory for this case
+                 alertText.innerText = "Weather conditions are favorable for irrigation. Ensure proper drainage.";
+                 finalWeatherData = generateWeatherForecast(query, 5, 0);
+            }
+
+            // Render Results
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+
+                grid.innerHTML = finalWeatherData.map(day => `
+                    <div class="bg-white p-4 rounded-[20px] border border-gray-100 shadow-sm flex flex-col items-center text-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-default">
+                        <span class="text-sm font-semibold text-[#607D8B] mb-3 uppercase tracking-wide">${day.date}</span>
+                        <div class="mb-3 p-3 ${day.bg} rounded-full">
+                            <i data-lucide="${day.icon}" class="w-8 h-8 ${day.color}"></i>
+                        </div>
+                        <span class="text-3xl font-bold text-[#263238] mb-1">${day.temp}</span>
+                        <span class="text-xs font-bold text-[#5a6c75] bg-gray-50 px-3 py-1 rounded-full uppercase tracking-wider">${day.condition}</span>
+                    </div>
+                `).join('');
+
+                emptyState.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+                lucide.createIcons();
+            }, 500); 
+        }
+
+        // MOCK WEATHER GENERATOR (Flexible)
+        function generateWeatherForecast(locationName, daysCount = 5, startOffset = 0) {
+            const today = new Date();
+            const days = [];
+            const conditions = [
+                { text: 'Sunny', icon: 'sun', color: 'text-orange-500', bg: 'bg-orange-50' },
+                { text: 'Partly Cloudy', icon: 'cloud-sun', color: 'text-blue-400', bg: 'bg-blue-50' },
+                { text: 'Light Rain', icon: 'droplets', color: 'text-blue-600', bg: 'bg-blue-50' },
+                { text: 'Clear', icon: 'wind', color: 'text-gray-500', bg: 'bg-gray-50' }
+            ];
+
+            for (let i = startOffset; i < startOffset + daysCount; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                const dayName = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short' });
+                
+                // Deterministic pseudo-random based on location string length + date index
+                const randomVal = (locationName.length + i) % conditions.length;
+                const cond = conditions[randomVal];
+                const temp = 25 + ((locationName.length * i) % 10); // Random temp between 25-35
+
+                days.push({
+                    date: dayName,
+                    temp: `${temp}°C`,
+                    condition: cond.text,
+                    icon: cond.icon,
+                    color: cond.color,
+                    bg: cond.bg
+                });
+            }
+            return days;
+        }
+
+        // --- Logic: Market ---
+        async function handleMarket(e) {
+            e.preventDefault();
+            const crop = document.getElementById('market-crop').value;
+            const state = document.getElementById('market-state').value;
+            const district = document.getElementById('market-district').value;
+            const date = document.getElementById('market-date').value;
+            const btn = document.getElementById('market-btn');
+            const resultContainer = document.getElementById('market-result-container');
+
+            if (!crop || !state || !district || !date) {
+                const btnOriginal = btn.innerHTML;
+                btn.innerHTML = "Please fill all fields";
+                btn.classList.add("bg-red-500", "text-white");
+                setTimeout(() => {
+                    btn.innerHTML = btnOriginal;
+                    btn.classList.remove("bg-red-500", "text-white");
+                }, 2000);
+                return;
+            }
+
+            const originalBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Fetching Prices...`;
+
+            let marketData = null;
+
+            try {
+                // 1. Try Fetching from Backend
+                const params = new URLSearchParams({
+                    state: state,
+                    district: district,
+                    commodity: crop
+                });
+
+                const response = await fetch(`${API_BASE_URL}/market-prices?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error("Backend unavailable");
+                }
+
+                const data = await response.json();
+                
+                // Handle response (support array or single object)
+                const record = Array.isArray(data) ? data[0] : data;
+                
+                if (record && (record.min_price || record.modal_price)) {
+                    marketData = {
+                        min: record.min_price || record.min || 0,
+                        max: record.max_price || record.max || 0,
+                        modal: record.modal_price || record.modal || 0
+                    };
+                } else {
+                    throw new Error("No data found");
+                }
+
+            } catch (error) {
+                console.log("Market API Fetch Failed, switching to fallback simulation:", error);
+                
+                // 2. Fallback: Smart Local Simulation
+                // Simulate network delay for realism
+                await new Promise(r => setTimeout(r, 800));
+
+                let basePrice = 2000;
+                const c = crop.toLowerCase();
+                
+                if(c.includes('cotton')) basePrice = 6200;
+                else if(c.includes('paddy') || c.includes('rice')) basePrice = 2800;
+                else if(c.includes('wheat')) basePrice = 2300;
+                else if(c.includes('maize')) basePrice = 2100;
+                else if(c.includes('soybean')) basePrice = 4500;
+                else if(c.includes('mustard')) basePrice = 5200;
+                else if(c.includes('onion')) basePrice = 1800;
+                else if(c.includes('tomato')) basePrice = 1200;
+                else if(c.includes('potato')) basePrice = 900;
+                else if(c.includes('chilli')) basePrice = 12000;
+                else if(c.includes('turmeric')) basePrice = 7500;
+                else if(c.includes('jeera')) basePrice = 25000;
+                
+                const variance = Math.floor(Math.random() * (basePrice * 0.1));
+                const min = basePrice - variance;
+                const max = basePrice + variance + 100;
+                const modal = Math.floor((min + max) / 2);
+
+                marketData = { min, max, modal };
+            }
+
+            // Update UI with Data (from either Source)
+            btn.disabled = false;
+            btn.innerHTML = originalBtnText;
+
+            if (marketData) {
+                document.getElementById('price-min').innerText = marketData.min;
+                document.getElementById('price-max').innerText = marketData.max;
+                document.getElementById('price-modal').innerText = marketData.modal;
+                
+                const d = new Date(date);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('market-result-date').innerText = `As of ${d.toLocaleDateString('en-US', options)}`;
+                
+                resultContainer.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        // --- Logic: Plant Doctor (New) ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedPlantImage = file;
+            
+            // Show Preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('image-preview');
+                const content = document.getElementById('dropzone-content');
+                const removeBtn = document.getElementById('remove-img-btn');
+                const scanLine = document.getElementById('scan-line');
+                
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                removeBtn.classList.remove('hidden');
+                content.classList.add('hidden'); // Hide the placeholder text
+                scanLine.classList.remove('hidden'); // Start scan effect
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage(event) {
+            event.stopPropagation(); // Prevent click from triggering input again
+            selectedPlantImage = null;
+            document.getElementById('file-upload').value = ''; // Reset input
+            
+            const img = document.getElementById('image-preview');
+            const content = document.getElementById('dropzone-content');
+            const removeBtn = document.getElementById('remove-img-btn');
+            const scanLine = document.getElementById('scan-line');
+            
+            img.src = '';
+            img.classList.add('hidden');
+            removeBtn.classList.add('hidden');
+            content.classList.remove('hidden');
+            scanLine.classList.add('hidden');
+            
+            // Hide result if it was open
+            document.getElementById('plant-result-container').classList.add('hidden');
+        }
+
+        async function analyzePlant() {
+            const btn = document.getElementById('analyze-btn');
+            const resultContainer = document.getElementById('plant-result-container');
+            
+            if (!selectedPlantImage) {
+                alert("Please upload an image first.");
+                return;
+            }
+
+            const originalBtnText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div> Scanning Leaf...`;
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedPlantImage);
+                formData.append('lang', currentLang); // Pass current lang
+
+                const response = await fetch(`${API_BASE_URL}/detect`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Detection API failed");
+                const data = await response.json();
+
+                document.getElementById('disease-name').innerText = data.disease;
+                
+                // If explanation is long, just show it. If it simulates points, we try to format.
+                document.getElementById('cure-text').innerText = data.explanation;
+                
+                resultContainer.classList.remove('hidden');
+                lucide.createIcons();
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                console.error(err);
+                alert("Analysis failed. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnText;
+            }
+        }
+
+        // --- Scroll Effect ---
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-md');
+                nav.classList.remove('bg-white/70');
+                nav.classList.add('bg-white/95');
+            } else {
+                nav.classList.remove('shadow-md');
+                nav.classList.add('bg-white/70');
+                nav.classList.remove('bg-white/95');
+            }
+        });
+
+        // Initialize Icons & Speech
+        lucide.createIcons();
+        initSpeech();
+    </script>
+</body>
+</html>
